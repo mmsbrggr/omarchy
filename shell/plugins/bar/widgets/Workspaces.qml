@@ -16,6 +16,15 @@ BarWidget {
   // numbered 1-10, and the one that monitor shows, whichever monitor has focus.
   readonly property int slots: 10
 
+  // How many of the monitor's own always show, used or not; the rest show while
+  // they hold windows. One to ten, five unless the entry in shell.json says.
+  function countSetting() {
+    var count = parseInt(root.setting("count", 5), 10)
+    return isNaN(count) ? 5 : Math.min(root.slots, Math.max(1, count))
+  }
+
+  readonly property int shown: root.countSetting()
+
   readonly property var monitor: {
     var window = root.QsWindow.window
     var screen = window ? window.screen : null
@@ -75,12 +84,13 @@ BarWidget {
     return null
   }
 
-  // The first five of the monitor's own, and any of the rest that exist. After
-  // them come workspaces that are only visiting: those of a monitor that is
-  // unplugged, which had no room to join this one's.
+  // The first `shown` of the monitor's own, and any of the rest that exist.
+  // After them come workspaces that are only visiting: those of a monitor that
+  // is unplugged, which had no room to join this one's.
   function workspaceIds() {
     var base = root.block * root.slots
-    var ids = [base + 1, base + 2, base + 3, base + 4, base + 5]
+    var ids = []
+    for (var slot = 1; slot <= root.shown; slot++) ids.push(base + slot)
     var guests = []
     var values = Hyprland.workspaces.values
 
